@@ -1,0 +1,7 @@
+[workspace]
+
+members = [
+  "http-server-hello-world",
+  "http-server-generate-random-number",
+  "http-server-include-html",
+]

@@ -13,15 +13,26 @@ use scraper::{Html, Selector};
 use std::env;
 use std::{thread, time};
 
-// TODO: return error instead of panicking.
+#[derive(Debug)]
+enum DownloadError {
+    GetPageFailure,
+    GetLinkFailure,
+    CreateImageFileFailure,
+    DownloadImageFileFailure,
+    SaveImageFileFailure,
+}
+
 // TODO: run it async.
-fn download_bird_image(image_page_path: &String) {
+fn download_bird_image(image_page_path: &String) -> Result<(), DownloadError> {
     let image_page_url = "https://en.wikipedia.org".to_owned() + &image_page_path;
 
     let client = reqwest::blocking::Client::new();
     println!("\n\nGetting image page url {}", image_page_url);
 
-    let res = client.get(&image_page_url).send().unwrap();
+    let res = client
+        .get(&image_page_url)
+        .send()
+        .map_err(|_| DownloadError::GetPageFailure)?;
     println!("Status for {}: {}", image_page_url, res.status());
 
     let text = res.text().expect("could not get request");
@@ -29,7 +40,10 @@ fn download_bird_image(image_page_path: &String) {
     let document = Html::parse_document(&text);
     let img_selector = Selector::parse(".fullImageLink a").expect("could not build parser");
 
-    let link = document.select(&img_selector).next().unwrap();
+    let link = document
+        .select(&img_selector)
+        .next()
+        .ok_or(DownloadError::GetLinkFailure)?;
 
     // Wikipedia respond with 403 status code sometimes,
     // so we need to retry the download for those cases.
@@ -53,19 +67,25 @@ fn download_bird_image(image_page_path: &String) {
         let file_path = "./static/".to_owned() + &file_name;
         println!("Creating file: {}", file_path);
 
-        let mut file = std::fs::File::create(&file_path).unwrap();
+        let mut file =
+            std::fs::File::create(&file_path).map_err(|_| DownloadError::CreateImageFileFailure)?;
 
-        let mut res_img = reqwest::blocking::get(&image_url).unwrap();
+        let mut res_img = reqwest::blocking::get(&image_url)
+            .map_err(|_| DownloadError::DownloadImageFileFailure)?;
         println!("Status for {}: {}", image_url, res_img.status());
 
         if res_img.status().is_success() {
-            res_img.copy_to(&mut file).unwrap();
+            res_img
+                .copy_to(&mut file)
+                .map_err(|_| DownloadError::SaveImageFileFailure)?;
             println!("Downloaded image url: {}", image_url);
             break;
         } else if attempt == 5 {
             println!("Failed to download image url: {}", image_url);
         }
     }
+
+    Ok(())
 }
 
 fn main() {
@@ -94,7 +114,7 @@ fn main() {
             .expect("href attr not foud")
             .to_string();
 
-        download_bird_image(&image_page_path);
+        download_bird_image(&image_page_path).unwrap();
 
         if total == 3 {
             // Keep it simple and don't overload Wikipedia with

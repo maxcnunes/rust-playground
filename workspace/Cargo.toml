@@ -6,4 +6,5 @@ members = [
   "http-server-include-html",
   "snake-game",
   "web-crawler",
+  "web-assemply-yew-app",
 ]

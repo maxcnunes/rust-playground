@@ -8,6 +8,7 @@
 // https://blog.logrocket.com/web-scraping-rust/
 // https://rolisz.ro/2020/03/01/web-crawler-in-rust/
 // https://hackernoon.com/parsing-html-with-rust-a-simple-tutorial-using-tokio-reqwest-and-scraper
+// https://github.com/tensor-programming/crawler_example/blob/master/src/main.rs
 use scraper::{Html, Selector};
 
 use std::{thread, time};

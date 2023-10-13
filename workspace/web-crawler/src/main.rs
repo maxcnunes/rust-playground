@@ -15,8 +15,11 @@ use std::{thread, time};
 
 #[derive(Debug)]
 enum DownloadError {
-    GetPageFailure,
-    GetLinkFailure,
+    GetPageRequestFailure,
+    GetPageBodyFailure,
+    CreateSelectorFailure,
+    GetLinkElementFailure,
+    GetLinkHrefFailure,
     CreateImageFileFailure,
     DownloadImageFileFailure,
     SaveImageFileFailure,
@@ -32,18 +35,19 @@ fn download_bird_image(image_page_path: String) -> thread::JoinHandle<Result<(),
         let res = client
             .get(&image_page_url)
             .send()
-            .map_err(|_| DownloadError::GetPageFailure)?;
+            .map_err(|_| DownloadError::GetPageRequestFailure)?;
         // println!("Status for {}: {}", image_page_url, res.status());
 
-        let text = res.text().expect("could not get request");
+        let text = res.text().map_err(|_| DownloadError::GetPageBodyFailure)?;
 
         let document = Html::parse_document(&text);
-        let img_selector = Selector::parse(".fullImageLink a").expect("could not build parser");
+        let img_selector = Selector::parse(".fullImageLink a")
+            .map_err(|_| DownloadError::CreateSelectorFailure)?;
 
         let link = document
             .select(&img_selector)
             .next()
-            .ok_or(DownloadError::GetLinkFailure)?;
+            .ok_or(DownloadError::GetLinkElementFailure)?;
 
         // Wikipedia respond with 403 status code sometimes,
         // so we need to retry the download for those cases.
@@ -51,7 +55,7 @@ fn download_bird_image(image_page_path: String) -> thread::JoinHandle<Result<(),
             let image_path = link
                 .value()
                 .attr("href")
-                .expect("href attr not foud")
+                .ok_or(DownloadError::GetLinkHrefFailure)?
                 .to_string();
 
             let image_url = "https:".to_owned() + &image_path;

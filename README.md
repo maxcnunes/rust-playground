@@ -1,6 +1,7 @@
 # rust-playground
 
-Nothing fancy, just a repository to keep track of important references and some coding I might write while I am learning Rust.
+Nothing fancy, just a personal repository to keep track of some code
+I might write while learning Rust and references I find helpful to Rust resources.
 
 ## Resources
 

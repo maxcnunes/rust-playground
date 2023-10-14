@@ -7,4 +7,5 @@ members = [
   "snake-game",
   "web-crawler",
   "web-assemply-yew-app",
+  "rest-api-axum",
 ]
